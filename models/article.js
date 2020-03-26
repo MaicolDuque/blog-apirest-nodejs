@@ -11,7 +11,8 @@ const ArticleSchema = Schema({
   title: String,
   content: String,
   date: { type: Date, default: Date.now },
-  image: String
+  image: String,
+  favorite: { type: String, default: 'N'}
 });
 
 module.exports = mongoose.model('Article', ArticleSchema); 

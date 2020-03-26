@@ -44,15 +44,12 @@ let save = (req, res) => {
             status: "error"
           })
         }
-
-        //Return a response
         return res.status(200).send({
           article: articleStored,
           status: "success"
         })
 
       });
-
 
     } else {
       return res.status(200).send({
@@ -245,10 +242,10 @@ let upload = (req, res) => {
         message: "La extensión de la imagen no es válida !!"
       })
     })
-  } else {    
+  } else {
     //Buscar el articulo y asignarle el nombre de la imagen y actualizarlo.
     let id = req.params.id
-    Article.findOneAndUpdate({_id: id}, {image: fileName}, {new: true}, (err, article) => {
+    Article.findOneAndUpdate({ _id: id }, { image: fileName }, { new: true }, (err, article) => {
       if (err) {
         return res.status(500).send({
           message: "Error al actualizar la imagen !!",
@@ -267,12 +264,12 @@ let upload = (req, res) => {
 
 let getImage = (req, res) => {
   let image = req.params.image
-  let pathFile = './upload/articles/'+image;
+  let pathFile = './upload/articles/' + image;
 
   fs.exists(pathFile, (exists) => {
-    if(exists){
+    if (exists) {
       return res.sendFile(path.resolve(pathFile));
-    }else{
+    } else {
       return res.status(404).send({
         status: "error",
         message: "La imagen no existe !!"
@@ -284,24 +281,79 @@ let getImage = (req, res) => {
 
 let search = (req, res) => {
   let searchString = req.params.search
-  Article.find({ "$or": [
-    { "title": {"$regex": searchString, "$options": "i"}},
-    { "content": {"$regex": searchString, "$options": "i"}}
-  ]})
-  .sort([['date', 'descending']])
-  .exec((err, articles) => {
+  Article.find({
+    "$or": [
+      { "title": { "$regex": searchString, "$options": "i" } },
+      { "content": { "$regex": searchString, "$options": "i" } }
+    ]
+  })
+    .sort([['date', 'descending']])
+    .exec((err, articles) => {
+      if (err) {
+        return res.status(500).send({
+          message: "Error buscar articulos !!",
+          status: "error",
+          error: "" + err
+        })
+      }
+
+      if (!articles.length) {
+        return res.status(404).send({
+          message: "No hay articulos para mostrar !!",
+          status: "success"
+        })
+      }
+
+      return res.status(200).send({
+        status: "success",
+        articles
+      })
+
+    })
+}
+
+let updatedFavorite = (req, res) => {
+  let id = req.params.id
+  let params = req.body
+  let favorite = 'N'
+  if (params.favorite) {
+    favorite = params.favorite
+  }
+  Article.findByIdAndUpdate({ _id: id }, { $set: { favorite: favorite } }, { new: true }, (err, article) => {
     if (err) {
       return res.status(500).send({
         message: "Error buscar articulos !!",
         status: "error",
         error: "" + err
       })
+
     }
 
-    if (!articles.length) {
+    if (!article) {
       return res.status(404).send({
-        message: "No hay articulos para mostrar !!",
+        message: "No hay articulos con ese ID",
         status: "success"
+      })
+    }
+
+    return res.status(200).send({
+      status: "success",
+      article
+    })
+
+  })
+
+}
+
+
+let getArticlesFavorites = (req, res) => {
+  
+  Article.find({ favorite: "S" }).exec((err, articles) => {
+    if (err) {
+      return res.status(500).send({
+        message: "Error buscar articulos favoritos !!",
+        status: "error",
+        error: "" + err
       })
     }
 
@@ -322,5 +374,7 @@ module.exports = {
   deleteArticle,
   upload,
   getImage,
-  search
+  search,
+  updatedFavorite,
+  getArticlesFavorites
 };
